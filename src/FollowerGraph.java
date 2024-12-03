@@ -25,6 +25,9 @@ public class FollowerGraph implements Serializable {
         users = new ArrayList<>();
     }
 
+    public ArrayList<User> getArrayList(){
+        return users;
+    }
     /**
      * Adds a new user if not already exist
      *
@@ -44,6 +47,16 @@ public class FollowerGraph implements Serializable {
         }
     }
 
+    public boolean validOneUser(String userName){
+        boolean userExist = false;
+        for(User user: users){
+            if(user.getUserName().equals(userName)){
+                userExist = true;
+                break;
+            }
+        }
+        return userExist;
+    }
     // Helper Method
     public boolean validUsers(String userFrom, String userTo) {
         boolean userFromExist = false;
@@ -85,6 +98,7 @@ public class FollowerGraph implements Serializable {
         return(new User[]{null, null});
     }
 
+
     /**
      * Add directed connection starting from userFrom (follower) to userTo (following)
      *
@@ -99,7 +113,7 @@ public class FollowerGraph implements Serializable {
     public void addConnection(String userFrom, String userTo){
         User[] indices = getUser(userFrom, userTo);
         if(Arrays.equals(indices, new User[]{null, null})){
-            // pass
+            System.out.println("The vertex " + userFrom + " or the vertex " + userTo + " does not exist");
         }else{
             if(!connections[indices[0].getIndexPos()][indices[1].getIndexPos()]) {
                 connections[indices[0].getIndexPos()][indices[1].getIndexPos()] = true;
@@ -109,27 +123,54 @@ public class FollowerGraph implements Serializable {
         }
     }
 
-    //fix
     /**
      * Removes a given user and all the connections from and to that user
      *
      * @param userName the username
      */
-    public void removeUser(String userName){
+    public void removeUser(String userName) {
         boolean userExist = false;
         User userToRemove = new User();
-        for(User user : users) {
-            if(user.getUserName().equals(userName)){
+        for (User user : users) {
+            if (user.getUserName().equals(userName)) {
                 userExist = true;
                 userToRemove = user;
                 break;
             }
         }
-        // update adjacency matrix and followers and followings
-        if(userExist) {
-            System.out.println(userName + " has been added");
+        if (userExist) {
+            int userIndex = userToRemove.getIndexPos();
+            // update adjacency matrix and followers and followings
+            for (int i = 0; i < User.getUserCount(); i++) {
+                if (connections[userIndex][i]){
+                    connections[userIndex][i] = false;
+                    users.get(i).setNumberOfFollowers(users.get(i).getNumberOfFollowers() - 1); // I learned you can use .get in an ArrayList
+                }
+                if (connections[i][userIndex]){
+                    connections[i][userIndex] = false;
+                    users.get(i).setNumberOfFollowings(users.get(i).getNumberOfFollowings() - 1);
+                }
+            }
+            users.remove(userIndex);
+            // Shift the adj matrix from the removed user
+            for (int i = userIndex; i < users.size(); i++){
+                for (int j = 0; j < users.size(); j++){
+                    connections[i][j] = connections[i + 1][j];
+                    connections[j][i] = connections[j][i + 1];
+                }
+            }
+            for (int j = 0; j < users.size(); j++){
+                connections[users.size()][j] = false;
+                connections[j][users.size()] = false;
+            }
+            // Update the User size in User class
+            User.setUserCount(User.getUserCount()-1);
+            System.out.println(userName + " has been removed.");
+        }else{
+            System.out.println("The vertex " + userName + " does not exist");
         }
     }
+
 
     /**
      * Remove directed connection starting from userFrom to userTo
@@ -145,7 +186,7 @@ public class FollowerGraph implements Serializable {
     public void removeConnection(String userFrom, String userTo){
         User[] indices = getUser(userFrom, userTo);
         if(Arrays.equals(indices, new User[]{null, null})){
-            // pass
+            System.out.println("The vertex " + userFrom + " or the vertex " + userTo + " does not exist");
         }else {
             if(connections[indices[0].getIndexPos()][indices[1].getIndexPos()]){
                 connections[indices[0].getIndexPos()][indices[1].getIndexPos()] = false;
@@ -170,8 +211,26 @@ public class FollowerGraph implements Serializable {
      * @return a String representation of the shortest path
      */
     public String shortestPath(String userFrom, String userTo){
-        StringBuilder shortestPath = new StringBuilder();
-        return shortestPath.toString();
+        List<String> paths = allPaths(userFrom, userTo);
+        // Check if there are any paths
+        if (paths.isEmpty()){
+            return "No path found";
+        }
+        String[] firstPathParts = paths.get(0).split("#");
+        String shortestPath = firstPathParts[0];
+        int shortestPathSize = Integer.parseInt(firstPathParts[1]);
+
+        // Loop to find shortest
+        for (String path : paths){
+            String[] parts = path.split("#");
+            int currentPathSize = Integer.parseInt(parts[1]);
+            if (currentPathSize < shortestPathSize){
+                shortestPath = parts[0];
+                shortestPathSize = currentPathSize;
+            }
+        }
+
+        return shortestPath + "#" + shortestPathSize;
     }
 
     /**
@@ -187,10 +246,36 @@ public class FollowerGraph implements Serializable {
      */
     public List<String> allPaths(String userFrom, String userTo){
         List<String> result = new ArrayList<>();
-        for(int i = 0; i < User.getUserCount(); i++) {
-
+        Stack<String> path = new Stack<>();
+        boolean[] marked = new boolean[User.getUserCount()];
+        User[] indices = getUser(userFrom, userTo);
+        if(Arrays.equals(indices, new User[]{null, null})){
+            // pass
+        }else {
+            dfsAllPaths(indices[0].getIndexPos(), indices[1].getIndexPos(), path, result, marked);
         }
         return result;
+    }
+    private void dfsAllPaths(int currentIndex, int destIndex, Stack<String> path, List<String> result, boolean[] marked) {
+        path.push(getUserNameByIndex(currentIndex));
+        marked[currentIndex] = true;
+        if(currentIndex == destIndex){ // base case
+            StringBuilder pathStr = new StringBuilder();
+            for (String user : path){
+                pathStr.append(user).append(" -> ");
+            }
+            // remove last " -> " and append the user count
+            pathStr.delete(pathStr.length() - 4, pathStr.length()).append("#").append(path.size());
+            result.add(pathStr.toString());
+        }else{
+            for(int neighborIndex = 0; neighborIndex < users.size(); neighborIndex++){
+                if(connections[currentIndex][neighborIndex] && !marked[neighborIndex]){
+                    dfsAllPaths(neighborIndex, destIndex, path, result, marked);
+                }
+            }
+        }
+        path.pop();
+        marked[currentIndex] = false;
     }
 
 
@@ -237,7 +322,7 @@ public class FollowerGraph implements Serializable {
         for(int i = 0; i<User.getUserCount(); i++){
             depthFirstSearch(i, new Stack<>(), result, new boolean[User.getUserCount()], i);
         }
-        return result;
+        return findUniqueLoops(result);
     }
 
     public void depthFirstSearch(int currentIndex, Stack<String> path, List<String> result, boolean[] marked, int startIndex){
@@ -250,10 +335,10 @@ public class FollowerGraph implements Serializable {
                     StringBuilder loop = new StringBuilder();
                     for (String userName : path) {
                         loop.append(userName).append(" -> ");
-
                     } // add the first element to the end element
-//                    loop.append(getUserNameByIndex(startIndex));
+                    loop.append(getUserNameByIndex(startIndex));
                     result.add(loop.toString());
+
                 }else if (!marked[neighborIndex]){
                     depthFirstSearch(neighborIndex, path, result, marked, startIndex);
                 }
@@ -261,6 +346,62 @@ public class FollowerGraph implements Serializable {
         }
         path.pop();
         marked[currentIndex] = false;
+    }
+
+    /**
+     * Check for duplicates by removing last element and checking if the paths are the same
+     *
+     * @param loops the list of loops to check for duplicates
+     * @return a list of unique loops
+     */
+    public static List<String> findUniqueLoops(List<String> loops) {
+        List<String> uniqueLoops = new ArrayList<>();
+        Set<String> checkedLoops = new HashSet<>(); // all loops already checked
+        for (String loop : loops){
+            String[] elements = loop.split(" -> ");
+            String[] elementsRemoveLast = Arrays.copyOf(elements, elements.length - 1);
+            boolean isDuplicate = false;
+            for (String checkedLoop : checkedLoops) {
+                String[] checkedElements = checkedLoop.split(" -> ");
+                String[] checkedElementsRemoveLast = Arrays.copyOf(checkedElements, checkedElements.length - 1);
+                // compare the current loop with the checked loop
+                if (checkCircularlyEquivalent(elementsRemoveLast, checkedElementsRemoveLast)){
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (!isDuplicate){
+                uniqueLoops.add(loop);
+                checkedLoops.add(loop);
+            }
+        }
+        return uniqueLoops;
+    }
+
+    /**
+     * Helper method compares each element of loop1 with loop2 starting at position i and wrapping around when it reaches the end of loop2
+     * If they are circularly equivalent.
+     *
+     * @param loop1 the first loop to be checked
+     * @param loop2 the second loop to be checked
+     * @return true if loop2 is circularly equivalent to loop1, otherwise false
+     */
+    public static boolean checkCircularlyEquivalent(String[] loop1, String[] loop2){
+        if (loop1.length != loop2.length) {
+            return false;
+        }
+        for (int i = 0; i < loop2.length; i++) {
+            boolean match = true;
+            for (int j = 0; j < loop1.length; j++){
+                if (!loop1[j].equals(loop2[(i + j) % loop2.length])){
+                    match = false;
+                    break;
+                }
+            }
+            if (match)
+                return true;
+        }
+        return false;
     }
 
     public String getUserNameByIndex(int index){
@@ -335,5 +476,6 @@ public class FollowerGraph implements Serializable {
             System.out.println("  " + getUserNameByIndex(i));
         }
     }
+
 
 }

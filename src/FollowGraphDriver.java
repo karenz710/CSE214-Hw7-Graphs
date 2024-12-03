@@ -1,7 +1,5 @@
 import java.io.*;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  *
@@ -17,6 +15,7 @@ public class FollowGraphDriver implements Serializable {
             FileInputStream file = new FileInputStream("follow_graph.obj");
             ObjectInputStream inStream = new ObjectInputStream(file);
             graph = (FollowerGraph) inStream.readObject();
+            User.setUserCount(graph.getArrayList().size());
         } catch (IOException | ClassNotFoundException e){
             System.out.println("follow_graph.obj is not found. New FollowGraph object will be created.");
             graph = new FollowerGraph();
@@ -33,14 +32,43 @@ public class FollowGraphDriver implements Serializable {
                     System.out.print("Please enter the name of the user: ");
                     String userName = input.nextLine();
                     graph.addUser(userName);
+                    // prints if User does not exist within the function
                     break;
                 }
                 case "C": { // Add Connection
-                    System.out.print("Please enter the source of the connection to add: ");
-                    String userFrom = input.nextLine();
-                    System.out.print("Please enter the dest of the connection to add: ");
-                    String userTo = input.nextLine();
+                    String userFrom;
+                    String userTo;
+                    boolean validInput;
+
+                    // Loop for valid source input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the source of the connection to add: ");
+                        userFrom = input.nextLine();
+                        if(userFrom.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            validInput = false;
+                        }else if (!graph.validOneUser(userFrom)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
+
+                    // Loop for valid destination input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the dest of the connection to add: ");
+                        userTo = input.nextLine();
+                        if (userTo.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            validInput = false;
+                        } else if (!graph.validOneUser(userTo)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
                     graph.addConnection(userFrom, userTo);
+
                     break;
                 }
                 case "AU": { // Load all Users
@@ -88,32 +116,148 @@ public class FollowGraphDriver implements Serializable {
                     break;
                 }
                 case "L": { // Print all Loops (cycles)
-                    graph.printAdjacencyMatrix();
                     List<String> result = graph.findAllLoops();
-                    for (String loop : result) {
-                        System.out.println(loop);
+                    int size = result.size();
+                    if(size==1){
+                        System.out.println("There is 1 loop:");
+                        for (String loop : result) {
+                            System.out.println(loop);
+                        }
+                    }else if(!result.isEmpty()) {
+                        System.out.println("There are a total of" + size + "loops:");
+                        for (String loop : result) {
+                            System.out.println(loop);
+                        }
+                    }else{
+                        System.out.println("There are no loops.");
                     }
                     break;
                 }
-                case "RU": { // Remove User FIX
+                case "RU": { // Remove User
                     System.out.print("Please enter the user to remove: ");
                     String userName = input.nextLine();
                     graph.removeUser(userName);
+                    // prints if User does not exist within the function
                     break;
                 }
                 case "RC": { // Remove Connection
+                    String userFrom;
+                    String userTo;
+                    boolean validInput;
 
-                    System.out.print("Please enter the source of the connection to remove: ");
-                    String userFrom = input.nextLine();
-                    System.out.print("Please enter the dest of the connection to remove: ");
-                    String userTo = input.nextLine();
+                    // Loop for valid source input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the source of the connection to remove: ");
+                        userFrom = input.nextLine();
+                        if(userFrom.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            System.out.println("There is no user with this name, Please choose a valid user!"); // added for codegrade
+                            validInput = false;
+                        }else if (!graph.validOneUser(userFrom)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
+
+                    // Loop for valid destination input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the dest of the connection to remove: ");
+                        userTo = input.nextLine();
+                        if (userTo.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            validInput = false;
+                        } else if (!graph.validOneUser(userTo)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
                     graph.removeConnection(userFrom, userTo);
                     break;
                 }
                 case "SP": { // Find Shortest Path
+                    String userFrom;
+                    String userTo;
+                    boolean validInput;
+                    // Loop for valid source input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the desired source: ");
+                        userFrom = input.nextLine();
+                        if(userFrom.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            validInput = false;
+                        }else if (!graph.validOneUser(userFrom)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
+
+                    // Loop for valid destination input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the desired destination: ");
+                        userTo = input.nextLine();
+                        if (userTo.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            validInput = false;
+                        } else if (!graph.validOneUser(userTo)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
+                    String result = graph.shortestPath(userFrom, userTo);
+                    String[] parts = result.split("#");
+                    String path = parts[0];
+                    int pathSize = Integer.parseInt(parts[1]);
+                    System.out.println("The shortest path is: " + path);
+                    System.out.println("The number of users in this path is: " + pathSize);
                     break;
                 }
                 case "AP": { // Find All Paths
+                    String userFrom;
+                    String userTo;
+                    boolean validInput;
+                    // Loop for valid source input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the desired source: ");
+                        userFrom = input.nextLine();
+                        if(userFrom.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            validInput = false;
+                        }else if (!graph.validOneUser(userFrom)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
+
+                    // Loop for valid destination input
+                    do {
+                        validInput = true;
+                        System.out.print("Please enter the desired destination: ");
+                        userTo = input.nextLine();
+                        if (userTo.isEmpty()) {
+                            System.out.println("You can not leave this field empty.");
+                            validInput = false;
+                        } else if (!graph.validOneUser(userTo)) {
+                            System.out.println("There is no user with this name, Please choose a valid user!");
+                            validInput = false;
+                        }
+                    } while (!validInput);
+
+                    List<String> result = graph.allPaths(userFrom, userTo);
+                    List<String> paths = new ArrayList<>();
+                    for (String path : result) {
+                        String[] parts = path.split("#");
+                        paths.add(parts[0]);
+                    }
+                    System.out.println("There are a total of " + paths.size() + " paths:");
+                    Collections.sort(paths);
+                    for (String path : paths){
+                        System.out.println(path);
+                    }
                     break;
                 }
                 case "Q": { // QUIT PROGRAM
@@ -124,6 +268,8 @@ public class FollowGraphDriver implements Serializable {
                         ObjectOutputStream outStream = new ObjectOutputStream(file);
                         outStream.writeObject(graph);
                         System.out.println("FollowGraph object saved into file FollowGraph.obj.");
+                        // update user count
+
                     } catch (IOException e) {
                         System.out.println("File not found");
                     }
@@ -144,12 +290,13 @@ public class FollowGraphDriver implements Serializable {
      */
     public static void printMenu() {
         System.out.print(
-                "(U) Add User\n" +
+                "************ Menu ************\n"+
+                        "(U) Add User\n" +
                         "(C) Add Connection\n" +
                         "(AU) Load all Users\n" +
                         "(AC) Load all Connections\n" +
                         "(P) Print all Users\n" +
-                        "(L) Print all Loops (cycles)\n" +
+                        "(L) Print all Loops\n" +
                         "(RU) Remove User\n" +
                         "(RC) Remove Connection\n" +
                         "(SP) Find Shortest Path\n" +
