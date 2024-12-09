@@ -4,11 +4,11 @@ import java.util.*;
 import java.io.File;
 
 /**
- * The FollowerGraph class contains an adjacency matrix for the users.
+ * The FollowerGraph class contains an adjacency matrix for the users. It updates the followings
+ * and followers of each user accordingly.
  *
  * @author Karen Zhao
  * Email: karen.zhao@stonybrook.edu
- * Student ID: 115931297
  * CSE214 - R02
  */
 public class FollowerGraph implements Serializable {
@@ -25,9 +25,14 @@ public class FollowerGraph implements Serializable {
         users = new ArrayList<>();
     }
 
+    /**
+     * Getter method for ArrayList users
+     * @return ArrayList users
+     */
     public ArrayList<User> getArrayList(){
         return users;
     }
+
     /**
      * Adds a new user if not already exist
      *
@@ -47,6 +52,11 @@ public class FollowerGraph implements Serializable {
         }
     }
 
+    /**
+     * Helper method to determine if the userName exists in the users array list
+     * @param userName the name to be determined
+     * @return True if user exists with username, false otherwise
+     */
     public boolean validOneUser(String userName){
         boolean userExist = false;
         for(User user: users){
@@ -57,7 +67,14 @@ public class FollowerGraph implements Serializable {
         }
         return userExist;
     }
-    // Helper Method
+
+    /**
+     * Helper method to see if users are valid in the arraylist user
+     *
+     * @param userFrom the source
+     * @param userTo the destination
+     * @return True if both users exist, false otherwise
+     */
     public boolean validUsers(String userFrom, String userTo) {
         boolean userFromExist = false;
         boolean userToExist = false;
@@ -98,7 +115,6 @@ public class FollowerGraph implements Serializable {
         return(new User[]{null, null});
     }
 
-
     /**
      * Add directed connection starting from userFrom (follower) to userTo (following)
      *
@@ -119,6 +135,9 @@ public class FollowerGraph implements Serializable {
                 connections[indices[0].getIndexPos()][indices[1].getIndexPos()] = true;
                 indices[0].setNumberOfFollowings(indices[0].getNumberOfFollowings() + 1);
                 indices[1].setNumberOfFollowers(indices[1].getNumberOfFollowers() + 1);
+                System.out.println("Connection added");
+            }else{
+                System.out.println("The connection already exists");
             }
         }
     }
@@ -170,7 +189,6 @@ public class FollowerGraph implements Serializable {
             System.out.println("The vertex " + userName + " does not exist");
         }
     }
-
 
     /**
      * Remove directed connection starting from userFrom to userTo
@@ -256,6 +274,18 @@ public class FollowerGraph implements Serializable {
         }
         return result;
     }
+
+    /**
+     * Helper method that performs a recursive Depth-First Search (DFS) to find all paths
+     * between the current user (currentIndex) and the destination user (destIndex).
+     * The method recursively traverses the graph and backtracks if necessary
+     *
+     * @param currentIndex the index of the current user in the graph
+     * @param destIndex the index of the destination user
+     * @param path the current path being traversed, represented as a stack
+     * @param result the list to store all found paths
+     * @param marked an array indicating whether a user has already been visited
+     */
     private void dfsAllPaths(int currentIndex, int destIndex, Stack<String> path, List<String> result, boolean[] marked) {
         path.push(getUserNameByIndex(currentIndex));
         marked[currentIndex] = true;
@@ -278,11 +308,11 @@ public class FollowerGraph implements Serializable {
         marked[currentIndex] = false;
     }
 
-
     /**
-     * Prints all users in the order based on the given Comparator
+     * Prints all users in the order based on the given Comparator, sorts the users based on the specified comparison
+     * prints the user's data.
      *
-     * @param comp
+     * @param comp the comparator to define the order of users
      */
     public void printAllUsers(Comparator<User> comp) {
         List<User> sortedUsers = new ArrayList<>(users); // Assuming 'users' is your collection of User objects
@@ -294,20 +324,58 @@ public class FollowerGraph implements Serializable {
         }
     }
 
-
     /**
      * Prints all the followers of the given user (See sample i/o for format)
-     * @param userName
+     * @param userName the user whose followers will be printed
      */
     public void printAllFollowers(String userName) {
+        Boolean userExist = false;
+        User userToBePrinted = new User();
+        for (User user : users) {
+            if (user.getUserName().equals(userName)) {
+                userExist = true;
+                userToBePrinted = user;
+                break;
+            }
+        }
+        if(userExist){
+            int userIndex = userToBePrinted.getIndexPos();
+            System.out.println("Followers of " + userName + ":");
+            for (int i = 0; i < users.size(); i++){
+                if (connections[i][userIndex]){
+                    System.out.println(users.get(i).getUserName());
+                }
+            }
+        }else{
+            System.out.println("User does not exist");
+        }
     }
 
     /**
      * prints all the users that the given user is following
-     * @param userName
+     * @param userName the user whose followings will be printed
      */
     public void printAllFollowing(String userName){
-
+        Boolean userExist = false;
+        User userToBePrinted = new User();
+        for (User user : users) {
+            if (user.getUserName().equals(userName)) {
+                userExist = true;
+                userToBePrinted = user;
+                break;
+            }
+        }
+        if(userExist){
+            int userIndex = userToBePrinted.getIndexPos();
+            System.out.println(userName + " is following:");
+            for (int i = 0; i < users.size(); i++){
+                if (connections[userIndex][i]){
+                    System.out.println(users.get(i).getUserName());
+                }
+            }
+        }else{
+            System.out.println("User does not exist");
+        }
     }
 
     /**
@@ -325,6 +393,14 @@ public class FollowerGraph implements Serializable {
         return findUniqueLoops(result);
     }
 
+    /**
+     * A helper method to perform Depth-First Search to find loops starting from the given user.
+     * @param currentIndex the index of the current user in the graph
+     * @param path the stack representing the current path being traversed
+     * @param result the list to store all loops
+     * @param marked an array to track visited users, do not revisit them
+     * @param startIndex the index of the starting user for detecting loops
+     */
     public void depthFirstSearch(int currentIndex, Stack<String> path, List<String> result, boolean[] marked, int startIndex){
         path.push(getUserNameByIndex(currentIndex));
         marked[currentIndex] = true;
@@ -404,6 +480,12 @@ public class FollowerGraph implements Serializable {
         return false;
     }
 
+    /**
+     * a helper method to help get the username given the index
+     *
+     * @param index the index position in the arraylist of the user
+     * @return the username of the user if user exists, nothing otherwise
+     */
     public String getUserNameByIndex(int index){
         for(User user: users) {
             if(user.getIndexPos() == index)
@@ -411,9 +493,10 @@ public class FollowerGraph implements Serializable {
         }
         return "";
     }
+
     /**
      * parses a file and add all users to the user list.
-     * @param filename
+     * @param filename the file to be parsed
      *
      * <dt>Preconditions:
      *    <dd> file content is correct
@@ -437,7 +520,7 @@ public class FollowerGraph implements Serializable {
      *
      * There may be invalid source/destination pairs. (skip)
      *
-     * @param filename
+     * @param filename the file to be parsed
      *
      */
     public void loadAllConnections(String filename) {
@@ -460,7 +543,9 @@ public class FollowerGraph implements Serializable {
         }
     }
 
-    // print adjacency matrix for testing
+    /**
+     *  print adjacency matrix for testing
+     */
     public void printAdjacencyMatrix() {
         System.out.print("    ");
         for (int i = 0; i < users.size(); i++) {
@@ -476,6 +561,4 @@ public class FollowerGraph implements Serializable {
             System.out.println("  " + getUserNameByIndex(i));
         }
     }
-
-
 }

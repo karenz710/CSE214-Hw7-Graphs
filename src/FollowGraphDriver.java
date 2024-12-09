@@ -2,15 +2,19 @@ import java.io.*;
 import java.util.*;
 
 /**
+ * FollowGraphDriver class that contains the main method and the user interface. Display a menu with the following options:
+ * add user, add connection, load all users, load all connections, print all users, print all loops, remove user, remove connection,
+ * find the shortest path, find all paths, and quit. Terminating the program persists the FollowGraph object through serializable interface.
  *
  * @author Karen Zhao
  * Email: karen.zhao@stonybrook.edu
- * Student ID: 115931297
  * CSE214 - R02
  */
 public class FollowGraphDriver implements Serializable {
     public static void main(String[] args) {
+
         FollowerGraph graph;
+        // load the follower graph if it exists
         try {
             FileInputStream file = new FileInputStream("follow_graph.obj");
             ObjectInputStream inStream = new ObjectInputStream(file);
@@ -32,7 +36,7 @@ public class FollowGraphDriver implements Serializable {
                     System.out.print("Please enter the name of the user: ");
                     String userName = input.nextLine();
                     graph.addUser(userName);
-                    // prints if User does not exist within the function
+                    // if user already exists, not readded
                     break;
                 }
                 case "C": { // Add Connection
@@ -75,12 +79,14 @@ public class FollowGraphDriver implements Serializable {
                     System.out.print("Enter the file name: "); // users.txt
                     String userFileName = input.nextLine();
                     graph.loadAllUsers(userFileName);
+                    // prints if file does not exist within the method
                     break;
                 }
                 case "AC": { // Load all Connections
                     System.out.print("Enter the file name: "); // connections.txt
                     String userFileName = input.nextLine();
                     graph.loadAllConnections(userFileName);
+                    // prints if file does not exist within the method
                     break;
                 }
                 case "P": { // Print all Users
@@ -152,7 +158,6 @@ public class FollowGraphDriver implements Serializable {
                         userFrom = input.nextLine();
                         if(userFrom.isEmpty()) {
                             System.out.println("You can not leave this field empty.");
-                            System.out.println("There is no user with this name, Please choose a valid user!"); // added for codegrade
                             validInput = false;
                         }else if (!graph.validOneUser(userFrom)) {
                             System.out.println("There is no user with this name, Please choose a valid user!");
@@ -193,7 +198,6 @@ public class FollowGraphDriver implements Serializable {
                             validInput = false;
                         }
                     } while (!validInput);
-
                     // Loop for valid destination input
                     do {
                         validInput = true;

@@ -5,7 +5,6 @@ import java.util.Comparator;
  *
  * @author Karen Zhao
  * Email: karen.zhao@stonybrook.edu
- * Student ID: 115931297
  * CSE214 - R02
  */
 public class NameComparator implements Comparator<User> {
